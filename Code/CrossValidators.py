@@ -23,8 +23,3 @@ def GroupValidation(dataset, folds):
     train = dataset.iloc[train_inds]
     test = dataset.iloc[test_inds]
     return(train,test)
-
-d,k = GroupValidation(dataset, folds= 10)
-        
-
-print(d,k)
