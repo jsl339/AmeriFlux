@@ -23,3 +23,7 @@ def GroupValidation(dataset, folds):
     train = dataset.iloc[train_inds]
     test = dataset.iloc[test_inds]
     return(train,test)
+
+
+## If you're not finding the txt file, my bad. It's the test.csv in the google drive now. 
+
