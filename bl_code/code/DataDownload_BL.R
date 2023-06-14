@@ -1,3 +1,4 @@
+rm(list=ls())
 library(amerifluxr)
 library(REddyProc)
 library(dplyr)
@@ -12,29 +13,25 @@ library(lutz)
 sites <- amf_sites()
 df <- sites %>% filter(grepl('NEON', SITE_NAME))
 
+nrow(df)
 
-lats <- (df$LOCATION_LAT)
-longs <- (df$LOCATION_LONG)
+lat <- as.numeric(df$LOCATION_LAT)
+long <- as.numeric(df$LOCATION_LONG)
 
-later <- as.numeric(lats)
-longer <- as.numeric(longs)
-t = tz_lookup_coords(later,longer)
-print(t)
-id <- df$SITE_ID
-id
+# t <- tz_lookup_coords(lat,long) # not sure this is used anywhere??
 
-id <- as.vector(id)
+site_id_vec <- as.vector(df$SITE_ID)
 
-floc2 <- amf_download_base(user_id = "jsl339",
-                          user_email = "jsl339@nau.edu",
-                          site_id = id,
+floc2 <- amf_download_base(user_id = "benjaminlucas",
+                          user_email = "ben.lucas@nau.edu",
+                          site_id = site_id_vec,
                           data_product = "BASE-BADM",
                           data_policy = "CCBY4.0",
                           agree_policy = TRUE,
                           intended_use = "model",
-                          intended_use_text = "Deep Learning Model-NAU",
-                          verbose = TRUE,
-                          out_dir = "/Users/johnleland/Desktop/Ameriflux_Data")
+                          intended_use_text = "CO2 flux modeling",
+                          out_dir = "/Users/bml438/Dropbox/nerd_stuff/NAU_Research/AmeriFlux/bl_code/data/")
+
 
 processor = function(filename,site, UTC, Lat, Long){
   

@@ -1,48 +1,34 @@
-library(amerifluxr)
-library(REddyProc)
-library(dplyr)
-library(data.table)
-library(bigleaf)
-library(zoo)
-library(plyr)
-library(tidyverse)
-library(imputeTS)
-library(lutz)
+# check if the required packages are installed
+list.of.pkg.required <- c("amerifluxr",
+                          "REddyProc",
+                          "dplyr",
+                          "data.table",
+                          "bigleaf",
+                          "zoo",
+                          "plyr",
+                          "tidyverse",
+                          "imputeTS",
+                          "lutz"
+                         )
 
-sites <- amf_sites()
-df <- sites %>% filter(grepl('NEON', SITE_NAME))
+new.packages <- list.of.pkg.required[!(list.of.pkg.required %in% installed.packages()[,"Package"])]
 
+# install the packages that are not installed already
+if(length(new.packages)) install.packages(new.packages, repos = "http://cran.us.r-project.org")
 
-lats <- (df$LOCATION_LAT)
-longs <- (df$LOCATION_LONG)
+# add all of the packages to the library
+lapply(list.of.pkg.required, library, character.only=TRUE)
 
-later <- as.numeric(lats)
-longer <- as.numeric(longs)
-t = tz_lookup_coords(later,longer)
-print(t)
-id <- df$SITE_ID
-id
+################################################################
+################################################################
+# Functions we will use later
 
-id <- as.vector(id)
-
-floc2 <- amf_download_base(user_id = "jsl339",
-                          user_email = "jsl339@nau.edu",
-                          site_id = id,
-                          data_product = "BASE-BADM",
-                          data_policy = "CCBY4.0",
-                          agree_policy = TRUE,
-                          intended_use = "model",
-                          intended_use_text = "Deep Learning Model-NAU",
-                          verbose = TRUE,
-                          out_dir = "/Users/johnleland/Desktop/Ameriflux_Data")
-
-processor = function(filename,site, UTC, Lat, Long){
-  
-  df1 <- amf_read_base(file = filename,
+data.preprocessing <- function(filename, site, UTC, Lat, Long){  
+    # Write what this function does...
+    df1 <- amf_read_base(file = filename,
                        unzip = TRUE,
                        parse_timestamp = TRUE)
-  
-  print("File Parsed.")
+    print("File Parsed.")
   
   if("TS_1_1_1" %in% colnames(df1)){
     
@@ -110,26 +96,12 @@ processor = function(filename,site, UTC, Lat, Long){
     
     fwrite(df1.Data.With.Posix.F, paste0("/Users/johnleland/Desktop/Ameriflux_Data/Dataset/",site,".csv"))
     fwrite(uStarTh, paste0("/Users/johnleland/Desktop/Ameriflux_Data/Dataset/USTAR_",site,".csv"))
-  }else {stop("Soil Temp DNE")}
+  }else {stop("Soil Temp not present in site's data")}
 }
-
-lip = list.files(pattern="*.zip")
-for (i in 1:length(lith)) {
-  tryCatch({
-    processor(lip[i],id[i],t[i],lats[i],longs[i])
-    print(paste0("Done with number:",i))
-  }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")})
-}
-
-
-
-setwd("/Users/johnleland/Desktop/Ameriflux_Data/Dataset/")
-data_files <- list.files("/Users/johnleland/Desktop/Ameriflux_Data/Dataset")  # Identify file names
-print(data_files)
-
 
 collab <- function(filename1,filename2, i){
-  
+  # Write what this function does...
+
   PR <- read.csv(filename1)
   UPR <- read.csv(filename2)
   
@@ -148,14 +120,32 @@ collab <- function(filename1,filename2, i){
   fwrite(complete, paste0("/Users/johnleland/Desktop/Ameriflux_Data/Dataset/Index/",i,".csv"))
 }
 
+################################################################
+################################################################
 
-temp = list.files(pattern="*.csv")
+# get a list of the NEON sites
+sites <- amf_sites()
+df <- sites %>% filter(grepl('NEON', SITE_NAME))
+print(paste0("We have found ", nrow(df), "NEON sites")
 
-l2 = temp[grepl("USTAR",(temp))]
+# get latitudes and longitudes for sites
+lat <- as.numeric(df$LOCATION_LAT)
+long <- as.numeric(df$LOCATION_LONG)
 
-l1 = setdiff(temp,l2)
+# get time zones for sites
+time.zones <- tz_lookup_coords(lat,long)
 
-for(j in 1:length(l1)){
-  collab(l1[j],l2[j],j)
-  print(paste0("Done with iteration:",j))
-}
+# save site IDs as a vector
+site.id.vec <- as.vector(df$SITE_ID)
+
+# download AmeriFlux data for the NEON sites
+print("Downloading data from AmeriFlux")
+downloaded.file.list <- amf_download_base(user_id = "benjaminlucas", ### need to edit this so that it is a command line argument
+                                          user_email = "ben.lucas@nau.edu", ### need to edit this so that it is a command line argument
+                                          site_id = site.id.vec,
+                                          data_product = "BASE-BADM",
+                                          data_policy = "CCBY4.0",
+                                          agree_policy = TRUE,
+                                          intended_use = "model",
+                                          intended_use_text = "CO2 flux modeling",
+                                          out_dir = "/Users/bml438/Dropbox/nerd_stuff/NAU_Research/AmeriFlux/bl_code/data/") ### need to edit this so it uses relative paths
