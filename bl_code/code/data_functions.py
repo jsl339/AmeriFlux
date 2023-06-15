@@ -3,7 +3,8 @@ import pandas as pd
 import os
 import sys
 
-def load_data(dir=None):
+
+def load_data(user_id, user_email, dir=None):
 
     # check if final file is already downloaded
     if dir is not None:
@@ -25,8 +26,17 @@ def load_data(dir=None):
         else:
             print("Data not found, downloading to data directory")
             # download data
-            
+            download_data_using_R(user_id, user_email)
             # preprocess data
 
             # save to data directory
 
+
+def download_data_using_R(user_id_arg, user_email_arg):
+    current_path = os.getcwd() 
+    data_path = current_path[:-4]+"data/"
+    os.system("Rscript data_download.R -u "+str(user_id_arg)+" -e "+str(user_email_arg)+" -d "+str(data_path))
+
+
+if __name__ == "__main__":
+    load_data("test", "email@email.com")
