@@ -15,7 +15,7 @@ def parse_args():
 def main():
     args = parse_args()
     data = load_data(user_id=args.userid, user_email=args.email, dir=args.datadir)
-    print(data.head())
+    # print(data.head())
 
 if __name__ == '__main__':
     main()
