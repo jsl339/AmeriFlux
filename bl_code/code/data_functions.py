@@ -25,10 +25,15 @@ def load_data(user_id, user_email, dir=None):
             return pd.read_csv("../phenocam_data_final.csv")
         else:
             print("Data not found, downloading to data directory")
-            # download data
-            download_data_using_R(user_id, user_email)
-            # preprocess data
 
+            # checking if Ameriflux username and email have been provided
+            if user_id == None or user_email == None:
+                print("Must provide registered user and email to download AmeriFlux data")
+                sys.exit()
+
+            # download and preprocess data
+            download_data_using_R(user_id, user_email)
+            
             # save to data directory
 
 

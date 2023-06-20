@@ -18,7 +18,7 @@ nrow(df)
 lat <- as.numeric(df$LOCATION_LAT)
 long <- as.numeric(df$LOCATION_LONG)
 
-# t <- tz_lookup_coords(lat,long) # not sure this is used anywhere??
+t <- tz_lookup_coords(lat,long)
 
 site_id_vec <- as.vector(df$SITE_ID)
 
@@ -31,6 +31,8 @@ floc2 <- amf_download_base(user_id = "benjaminlucas",
                           intended_use = "model",
                           intended_use_text = "CO2 flux modeling",
                           out_dir = "/Users/bml438/Dropbox/nerd_stuff/NAU_Research/AmeriFlux/bl_code/data/")
+
+
 
 
 processor = function(filename,site, UTC, Lat, Long){
