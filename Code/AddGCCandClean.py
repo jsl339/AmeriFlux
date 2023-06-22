@@ -115,8 +115,8 @@ d = final_df[final_df["FC50"] <= x[1]]
 
 d = d[d["FC50"] >= x[0]]
 
-dpreds = d.drop(["FC50"], axis = 1)
-dresponse = d["FC50"]
+dpreds = d.drop(["FC50","LE50"], axis = 1)
+dresponse = d["FC50","LE50"]
 
 
 dpreds = dpreds.interpolate()
