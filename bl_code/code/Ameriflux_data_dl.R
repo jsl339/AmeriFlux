@@ -53,16 +53,16 @@ time.zones <- tz_lookup_coords(lat,long)
 site.id.vec <- as.vector(df$SITE_ID)
 
 # download AmeriFlux data for the NEON sites
-# print("Downloading data from AmeriFlux")
-# downloaded.file.list <- amf_download_base(user_id = opt$userid,
-#                                           user_email = opt$email,
-#                                           site_id = site.id.vec,
-#                                           data_product = "BASE-BADM",
-#                                           data_policy = "CCBY4.0",
-#                                           agree_policy = TRUE,
-#                                           intended_use = "model",
-#                                           intended_use_text = "CO2 flux modeling",
-#                                           out_dir = opt$dir)
+print("Downloading data from AmeriFlux")
+downloaded.file.list <- amf_download_base(user_id = opt$userid,
+                                          user_email = opt$email,
+                                          site_id = site.id.vec,
+                                          data_product = "BASE-BADM",
+                                          data_policy = "CCBY4.0",
+                                          agree_policy = TRUE,
+                                          intended_use = "model",
+                                          intended_use_text = "CO2 flux modeling",
+                                          out_dir = opt$dir)
 
 ################################################################
 ################################################################
@@ -143,23 +143,23 @@ processor <- function(filename, site, UTC, Lat, Long){
 
 list.of.zipped.site.files = list.files(path="/Users/bml438/Desktop/data/", pattern="*.zip") ############ need to change this to opt$dir <----------------------------------------------
 
-# for (i in 1:length(list.of.zipped.site.files)) {
-#   tryCatch({
-#     file.name = paste0("/Users/bml438/Desktop/data/", list.of.zipped.site.files[i]) ############ need to change this to opt$dir <----------------------------------------------
-#     processor(file.name,site.id.vec[i],time.zones[i],lat[i],long[i])
-#     print(paste0("Completed site no: ", i))
-#   }, error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
-# }
+for (i in 1:length(list.of.zipped.site.files)) {
+  tryCatch({
+    file.name = paste0("/Users/bml438/Desktop/data/", list.of.zipped.site.files[i]) ############ need to change this to opt$dir <----------------------------------------------
+    processor(file.name,site.id.vec[i],time.zones[i],lat[i],long[i])
+    print(paste0("Completed site no: ", i))
+  }, error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+}
 
 ################################################################
 ################################################################
 collab <- function(filename1, filename2, i){
   
-  filename1 <- paste0("/Users/bml438/Desktop/data/", filename1) ############ need to change this to opt$dir <----------------------------------------------
-  filename2 <- paste0("/Users/bml438/Desktop/data/", filename2) ############ need to change this to opt$dir <----------------------------------------------
+  path1 <- paste0("/Users/bml438/Desktop/data/", filename1) ############ need to change this to opt$dir <----------------------------------------------
+  path2 <- paste0("/Users/bml438/Desktop/data/", filename2) ############ need to change this to opt$dir <----------------------------------------------
 
-  PR <- read.csv(filename1)
-  UPR <- read.csv(filename2)
+  PR <- read.csv(path1)
+  UPR <- read.csv(path2)
   
   colnames(UPR)[which(names(UPR) == "X5.")] <- "U5"
   colnames(UPR)[which(names(UPR) == "X50.")] <- "U50"
@@ -170,10 +170,9 @@ collab <- function(filename1, filename2, i){
   
   complete <- merge(PR,UPR1,by = "YEAR", all.x = TRUE)
   
-  str <- gsub(".csv"," ",filename1)
+  str <- gsub(".csv","",filename1)
   complete <- complete %>% mutate(Site = str)
-  
-  fwrite(complete, paste0("/Users/bml438/Desktop/data/", i, ".csv"))
+  fwrite(complete, paste0("/Users/bml438/Desktop/data/", str, "_processed.csv")) ############ need to change this to opt$dir <----------------------------------------------
 }
 
 site.csv.files <- list.files(path="/Users/bml438/Desktop/data/", pattern=glob2rx("US-*.csv")) ############ need to change this to opt$dir <----------------------------------------------
@@ -184,6 +183,27 @@ for(j in 1:length(site.csv.files)){
   collab(site.csv.files[j],site.ustar.files[j],j)
   print(paste0("Done with site ", j, " of ", length(site.csv.files)))
 }
+
+################################################################
+################################################################
+
+list.of.processed.files = list.files(path="/Users/bml438/Desktop/data/", pattern=glob2rx("*_processed.csv")) ############ need to change this to opt$dir <----------------------------------------------
+data.list <- list()
+
+for (i in 1:length(list.of.processed.files)) {
+  filename <- list.of.processed.files[i]
+  filename <- paste0("/Users/bml438/Desktop/data/", filename)  ############ need to change this to opt$dir <----------------------------------------------
+  # Read data in
+  df <- read.csv(filename, header = TRUE)
+  # Add year to data_list
+  data.list[[i]] <- df
+
+  print(paste0("Done with iteration ",i))
+}
+
+concatenated.files <- do.call(rbind.fill, data.list)
+
+fwrite(concatenated.files, paste0("/Users/bml438/Desktop/data/", "all_sites_Ameriflux.csv"))  ############ need to change this to opt$dir <----------------------------------------------
 
 ################################################################
 ################################################################
