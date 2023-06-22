@@ -69,6 +69,7 @@ keep_cols = ['TS_1_1_1',
  'DOYCos',
  'DOYSin',
  'FC50',
+ 'LE50',
  'Site',
  'PPFD_OUT', 
 'PPFD_BC_IN_1_1_1',
@@ -85,11 +86,14 @@ keep_cols = ['TS_1_1_1',
  'gcc_90',
  'rcc_50',
  'rcc_75',
- 'rcc_90'
+ 'rcc_90',
+ 'V2'
  ]
 #Create FC50 
+final_df = final_df.rename(columns={"V2": "LE"}) # LE gets renamed upon addition. 
 data = final_df[final_df.Ustar >= final_df.U50]
 final_df["FC50"] = data["FC"]
+final_df["LE50"] = data["LE"]
 
 #Final df of kept columns
 final_df = final_df.loc[:,keep_cols]
