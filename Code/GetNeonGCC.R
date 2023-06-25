@@ -62,9 +62,10 @@ neon_sites <- c('PR-xGU',
                 'US-xWR',
                 'US-xYE')
 
+
 #Rename mislabeled site in phenos
-phenos$flux_sitenames[438] <- 'US-xSL'
-phenos$flux_sitenames[439] <- 'US-xSL'
+mislabeled_names <- c('NEON.D10.STER.DP1.00033','NEON.D10.STER.DP1.00042')
+phenos[site %in% mislabeled_names, "flux_sitenames"] <- c('US-xSL','US-xSL')
 
 #Filter phenos by flux sitename in neon_sites
 neon_phenos <- phenos[phenos$flux_sitenames %in% neon_sites,]
@@ -84,6 +85,7 @@ neon_rois <- neon_rois[match(filtered_neon_phenos$site,neon_rois$site)]
 #Add column with site name abbreviations
 neon_rois$abrev <- filtered_neon_phenos$flux_sitenames
 
+
 # Read 1 day data for each neon site and concatenate
 for (i in 1:nrow(neon_rois)){
   input1 <- neon_rois$site[i]
@@ -101,5 +103,9 @@ for (i in 1:nrow(neon_rois)){
            }
 }
 
-#Use fwrite with desired path to save full_df
+#Make New DataFrame with extra desired metadata
+
+newcolumns <- filtered_neon_phenos[,c('flux_sitenames','primary_veg_type','secondary_veg_type', 'MAT_daymet', 'MAP_daymet')]
+
+#Use fwrite with desired path to save full_df and newcolumns
 
