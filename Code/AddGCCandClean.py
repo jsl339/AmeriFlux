@@ -58,7 +58,7 @@ final_df.drop(['index'], axis = 1, inplace = True)
 del merge_list, cleandflist, gcclist, dflist, df, df2
 #%%
 #Columns to keep
-keep_cols = ['DOY', 'HOUR', 'MONTH','DAY', 'YEAR',
+keep_cols = ['DOY', 'HOUR', 'MONTH','DAY', 'YEAR', 'TIMESTAMP',
 'TS_1_1_1',
  'TS_1_2_1',
 'PPFD',
@@ -90,20 +90,22 @@ data = final_df[final_df.Ustar >= final_df.U50]
 
 final_df["FC50"] = data["FC"]
 final_df["LE50"] = data["V2"]
-
+#%%
 #Final df of kept columns
 final_df = final_df.loc[:,keep_cols]
 #%%
 #Add in phenocam site metadata 
 new_cols = pd.read_csv(r"C:\Users\jeffu\OneDrive\Documents\Newcolumns.csv")
 new_cols.rename(columns={'flux_sitenames':'Site'},inplace=True)
+#Replace Secondary Veg NA with primary
+newer = new_cols.secondary_veg_type.fillna(new_cols.primary_veg_type)
+new_cols.secondary_veg_type = newer
+#%%
+#Leftmerge final with phenocam metadata
 final_df = final_df.merge(new_cols, how='left', on='Site')
 
-#Subtract 1 from DOY on Leap Year
-final_df.loc[(final_df['YEAR']==2020) & (final_df['DOY']>=60),'DOY'] -=1
-
 #Scale DOY and HOUR
-final_df.loc[:,'DOY'] /= 365
+final_df.loc[:,'DOY'] /= 366
 final_df.loc[:,'HOUR'] /= 24
 #Remove Month,day,year
 final_df.drop(['MONTH','DAY','YEAR'], axis = 1, inplace= True)
@@ -159,3 +161,4 @@ dfLE50 = dat.dropna()
 dfFC50.to_csv(r"C:\Users\jeffu\Documents\FC50Data.csv",index=False)
 dfLE50.to_csv(r"C:\Users\jeffu\Documents\LE50Data.csv",index=False)
 # %%
+
