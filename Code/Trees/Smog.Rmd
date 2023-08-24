@@ -1,0 +1,78 @@
+---
+title: "AttemptSMOTE"
+author: "John Leland"
+date: "2023-08-08"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(data.table)
+library(UBL)
+
+df <- fread("/Users/johnleland/Desktop/LE50DataVer3.csv", stringsAsFactors = TRUE)
+```
+
+```{r}
+
+df$Site <- as.factor(df$Site)
+head(df$Site)
+
+is.factor(df$Site)
+```
+
+```{r}
+boxplot(df$LE50)
+```
+
+
+
+
+```{r}
+library(UBL)
+
+data = split(df, df$Site)
+
+
+smote_store = c()
+
+for(df1 in data){
+  
+  print("Chunk Complete")
+  
+  s <- boxplot.stats(df1$LE50)$stats
+  rel <- matrix(0, ncol = 3, nrow = 0)
+  rel <- rbind(rel, c(s[1], 1, 0))
+  rel <- rbind(rel, c(s[3], 0, 0))
+  rel <- rbind(rel, c(s[5], 1, 0))
+  
+  smote <- SMOGNRegress(LE50~., df1, dist = "HEOM", rel= rel)
+
+  smoter <- na.omit(smote)
+  
+  smote_store = rbind(smote_store, smoter)
+  
+  gc()
+}
+
+# newdf <- rbind(df,smoter)
+```
+
+
+```{r}
+head(smote_store)
+```
+
+
+
+```{r}
+
+fwrite(smote_store, "/Users/johnleland/Desktop/LE50DataVer_NEW.csv")
+
+```
+
+
