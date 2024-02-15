@@ -17,7 +17,7 @@ from scipy.stats import boxcox, shapiro, kstest
 from scipy.stats import t, sem
 
 #Read CSV to pandas dataframe, header first row 
-df_chunk=pd.read_csv("/Users/johnleland/Desktop/LE50DataVer_NEW.csv", header = 0, chunksize=10000, low_memory= False)
+df_chunk=pd.read_csv("/Users/johnleland/Downloads/LE50DataVer4.csv", header = 0, chunksize=10000, low_memory= False)
 
 chunk_list = []  # append each chunk df here 
 # Each chunk is in df format
@@ -29,13 +29,19 @@ for chunk in df_chunk:
 # concat the list into dataframe 
 df = pd.concat(chunk_list)
 
+soils = pd.read_csv("Neon_Soils_Summary.csv")
+soils.rename({'siteID':'Site'},axis = 1,inplace=True)
+
+df.merge(soils, on= 'Site', how = 'outer')
+
+
 #df = df[df.LE50 >= 0 ]
 
 #df = df[df.PPFD >= 50]
 
 print("Dataframe Loaded")
 
-X = df.drop(["LE50","Site", "prcp2week"], axis = 1)
+X = df.drop(["LE50","Site"], axis = 1)
 Y = df["LE50"] # log/ box-cox transform?
 # Xy = xgb.QuantileDMatrix(X, Y)
 """"
@@ -47,19 +53,22 @@ Y = pd.DataFrame((Y))
 model = xgb.XGBRegressor(objective="reg:squarederror", random_state=13, tree_method = "hist",n_estimators = 2000, early_stopping_rounds = 50, 
                         max_depth=6, learning_rate = 0.15, min_child_weight=1, subsample=0.6, colsample_bynode = 0.6) 
                         # "This is the best model for LE50 LOGO
-#model = xgb.XGBRegressor(objective="reg:squarederror", random_state=13, tree_method = "hist",n_estimators = 2500, early_stopping_rounds = 20, 
- #                        learning_rate=0.025, max_depth=14, subsample=0.7,colsample_bynode =0.7)
+#model = xgb.XGBRFRegressor(objective="reg:squarederror", random_state=13, tree_method = "hist",num_parallel_tree = 200, 
+         #             max_depth=20, learning_rate = 0.1, subsample=0.8, colsample_bynode = 0.8) 
                          
 #model = xgb.XGBRegressor(objective="reg:squarederror", random_state=13, tree_method = "hist",n_estimators = 2000, early_stopping_rounds = 50, 
  #                        colsample_bynode =0.45, learning_rate=0.05, max_depth=10, min_child_weight=1, subsample=0.5) # FC50 model
 
 overallmse = []
 overallr2 = []
-# cv = LeaveOneGroupOut()
-cv = KFold(n_splits=10, shuffle=True, random_state=13)
+cv = LeaveOneGroupOut()
+#cv = KFold(n_splits=10, shuffle=True, random_state=13)
 for i, (train, test) in enumerate(cv.split(X, Y, groups=df["Site"])):
+
     print("Fold Number:", i)
+
     start = time.time()
+
     x_train = X.iloc[train]
     y_train = Y.iloc[train]
 
@@ -68,7 +77,7 @@ for i, (train, test) in enumerate(cv.split(X, Y, groups=df["Site"])):
 
     evalset = [(x_train,y_train),(x_test,y_test)]
     # Model
-    model.fit(x_train,y_train, eval_set = evalset, verbose = True)
+    model.fit(x_train,y_train, eval_set = evalset, verbose = False)
 
     #Prediction
     predict = model.predict(x_test)
@@ -82,7 +91,7 @@ for i, (train, test) in enumerate(cv.split(X, Y, groups=df["Site"])):
     elapsed = end - start
 
     print("Time Per Fold:", elapsed)
-    print(f'RMSE: {mse}, R2 Score: {score}')
+    print(f'MSE: {mse}, R2 Score: {score}')
 
     residual = y_test - predict
 
@@ -102,7 +111,7 @@ for i, (train, test) in enumerate(cv.split(X, Y, groups=df["Site"])):
     plt.plot(results['validation_1']['rmse'], label='test')
     # model.best_iteration
     plt.legend()
-    directory = "XGregression/FC50/LOGO/FC50"
+    directory = "XGregression/LE50/LOGO/LE50"
     parent_dir = "/Users/johnleland/Desktop/Ameriflux_Data/"
     path = os.path.join(parent_dir, directory) 
 
@@ -112,7 +121,8 @@ for i, (train, test) in enumerate(cv.split(X, Y, groups=df["Site"])):
     sorted_idx = model.feature_importances_.argsort()
     imp = model.feature_importances_[sorted_idx]
     ximp = x_test.columns[sorted_idx]
-    fig1 = plt.barh(ximp[:10],imp[:10])
+    plt.figure(figsize=(20,10))
+    fig1 = plt.barh(ximp,imp)
     plt.savefig(path + "Feature_Importances"+str(i)+".png")
     plt.close()
     d = {'Fold': [i], 'MSE': [mse], 'R2':[score]}
@@ -131,8 +141,8 @@ for i, (train, test) in enumerate(cv.split(X, Y, groups=df["Site"])):
     df_sort.reset_index(drop=True,inplace=True)
 
     plt.plot(df_sort.TrueValue,df_sort.SquaredError)
-    plt.title('FC Error')
-    plt.xlabel('FC50')
+    plt.title('LE Error')
+    plt.xlabel('LE50')
     plt.ylabel('Error')
     plt.savefig(path + "Squared_Error_Partitions"+str(i)+".png")
     plt.close()
@@ -146,7 +156,7 @@ for i, (train, test) in enumerate(cv.split(X, Y, groups=df["Site"])):
     low_avg = low_avg.rolling(7).mean()
     up_avg = up_avg.rolling(7).mean()
 
-    """plt.plot (y_avg, '.', label = 'FC50')
+    plt.plot (y_avg, '.', label = 'LE50')
     plt.plot(pred_avg, 'b-', label= 'Prediction')
     #plt.plot(low_avg, 'r-', label= 'Lower Bound')
     #plt.plot(up_avg, 'r-', label= 'Upper Bound')
@@ -155,9 +165,7 @@ for i, (train, test) in enumerate(cv.split(X, Y, groups=df["Site"])):
     plt.xlabel('Day of Year')
     plt.legend()
     plt.savefig(path + "Time_Series_Error_"+str(i)+".png")
-    plt.close()"""
-
-    ## new fig 
+    plt.close()
 
 print("MSE Average:",np.mean(overallmse), "MSE Median:",np.median(overallmse),"R2 Average:",np.mean(overallr2), "R2 Median:", np.median(overallr2))
 """dd = {'Average MSE': [np.mean(overallmse)], 'Average R2':[np.mean(overallr2)], 'Median MSE':[np.median(overallmse)], 'Median R2':[np.median(overallr2)]}
