@@ -33,7 +33,7 @@ cv = KFold(n_splits=10)
 
 overallmse = []
 overallr2 = []
-model = RandomForestRegressor(min_samples_split=2,n_estimators=100,random_state=13, max_depth= 10, warm_start=True,n_jobs=-1)
+model = RandomForestRegressor(min_samples_split=2,n_estimators=100,random_state=13, max_depth= 10,n_jobs=-1)
 for i, (train, test) in enumerate(cv.split(X, Y)):
     print("Fold Number:", i)
     start = time.time()
